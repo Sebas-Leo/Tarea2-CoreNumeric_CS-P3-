@@ -71,7 +71,7 @@ requires Numeric<typename C::value_type>
 auto max(const C& container) {
     using T = typename C::value_type;
     if constexpr (std::is_arithmetic_v<T>) {
-        T result = std::numeric_limits<T>::lowest();
+        T result = T{};
         for (const auto& v : container) {
             if (result < v)
                 result = v;
@@ -130,18 +130,17 @@ auto variance_variadic(T first, Args... rest) {
     using Common = std::common_type_t<T, Args...>;
     std::size_t n = sizeof...(Args) + 1;
     auto m = mean_variadic(first, rest...);
-    Common casted_m = static_cast<Common>(m);
+    Common mc = static_cast<Common>(m);
+
     Common sq_sum{};
 
-    auto add_squared_diff = [&sq_sum, &casted_m](auto v) {
-        Common d = static_cast<Common>(v) - casted_m;
-        sq_sum = sq_sum + d * d;
-    };
-
-    add_squared_diff(first);
+    auto f = [&sq_sum, &mc](auto v) {
+    Common d = static_cast<Common>(v) - mc;
+    sq_sum = sq_sum + d * d;
+        };
+    f(first);
     if constexpr (sizeof...(Args) > 0) {
-        (add_squared_diff(rest), ...);
-    }
+        (f(rest), ...);}
 
     return sq_sum / n;
 }
